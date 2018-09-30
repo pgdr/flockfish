@@ -12,11 +12,20 @@ class Stockfish(object):
         self._stf = subprocess.Popen(self._cmd,
                                     stdout=subprocess.PIPE,
                                     stdin=subprocess.PIPE)
-        self.stdout = self._stf.stdout
 
     def _write(self, cmd):
         self._stf.stdin.write(cmd)
         self._stf.stdin.write('\n')
+
+    def read_until(self, stopcriteria):
+        output = []
+        for line in iter(self._stf.stdout.readline, b''):
+            line = line.rstrip()
+            output.append(line)
+            print(">>> " + line)
+            if stopcriteria(line):
+                break
+        return output
 
     def go(self):
         self._write('go')
@@ -40,35 +49,28 @@ def get_board(fen=None, moves=None):
     stf.pos(fen=fen, moves=moves)
     stf.brd()
 
+    output = stf.read_until(lambda line: line and 'Checkers' in line)
     brd = []
-    for line in iter(stf.stdout.readline, b''):
+    for line in output:
         line = line.strip()
         if line and line[0] in ('|', '+'):
             brd.append(line)
-        print(">>> " + line)
-        if 'Checkers' in line:
-            return brd
+    return brd
 
 def get_bestmove(fen=None, moves=None):
     stf = Stockfish()
     stf.pos(fen=fen, moves=moves)
     stf.go()
 
-    for line in iter(stf.stdout.readline, b''):
-        line = line.rstrip()
-        print(">>> " + line)
-        if 'bestmove' in line:
-            return line.split()[1]
+    output = stf.read_until(lambda line: line and 'bestmove' in line)[-1]
+    return output.split()[1]
 
 def get_fen(fen=None, moves=None):
     stf = Stockfish()
     stf.pos(fen=fen, moves=moves)
     stf.brd()
-    for line in iter(stf.stdout.readline, b''):
-        line = line.strip()
-        print(">>> " + line)
-        if 'Fen' in line:
-            return line[5:]
+    output = stf.read_until(lambda line: line and 'Fen' in line)[-1]
+    return output[5:]  # - "Fen: "
 
 
 app = Flask('Flockfish')
@@ -77,19 +79,27 @@ app = Flask('Flockfish')
 def route_next():
     fen_ = request.args.get('fen')
     moves_ = request.args.get('moves')
-    return jsonify(get_bestmove(fen=fen_, moves=moves_))
+    return jsonify({'bestmove': get_bestmove(fen=fen_, moves=moves_)})
 
 @app.route('/fen/', methods=['GET'])
 def route_fenstring():
     fen_ = request.args.get('fen')
     moves_ = request.args.get('moves')
-    return jsonify(get_fen(fen=fen_, moves=moves_))
+    return jsonify({'fen': get_fen(fen=fen_, moves=moves_)})
 
 @app.route('/board/', methods=['GET'])
 def route_board():
     fen_ = request.args.get('fen')
     moves_ = request.args.get('moves')
-    return jsonify(get_board(fen=fen_, moves=moves_))
+    return jsonify({'board': get_board(fen=fen_, moves=moves_)})
+
+@app.route('/', methods=['GET'])
+def route_all():
+    fen_ = request.args.get('fen')
+    moves_ = request.args.get('moves')
+    return jsonify({'board': get_board(fen=fen_, moves=moves_),
+                    'bestmove': get_bestmove(fen=fen_, moves=moves_),
+                    'fen': get_fen(fen=fen_, moves=moves_)})
 
 
 if __name__ == '__main__':

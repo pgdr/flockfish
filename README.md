@@ -7,10 +7,11 @@ moves.
 For this project, you need to download and install `stockfish` and either have
 it in `$PATH` or give the path to `stockfish` as an argument.
 
-Three endpoints:
-* `bestmove`
-* `fen`
-* `board`
+Four endpoints:
+* `/`  (which returns all of the below)
+* `/bestmove`
+* `/fen`
+* `/board`
 
 They all take arguments `?fen=<fenstring>&moves=<space separated fullmoves>`
 
