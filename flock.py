@@ -49,7 +49,7 @@ def get_board(fen=None, moves=None):
     stf.pos(fen=fen, moves=moves)
     stf.brd()
 
-    output = stf.read_until(lambda line: line and 'Checkers' in line)
+    output = stf.read_until(lambda line: 'Checkers' in line)
     brd = []
     for line in output:
         line = line.strip()
@@ -62,14 +62,14 @@ def get_bestmove(fen=None, moves=None):
     stf.pos(fen=fen, moves=moves)
     stf.go()
 
-    output = stf.read_until(lambda line: line and 'bestmove' in line)[-1]
+    output = stf.read_until(lambda line: 'bestmove' in line)[-1]
     return output.split()[1]
 
 def get_fen(fen=None, moves=None):
     stf = Stockfish()
     stf.pos(fen=fen, moves=moves)
     stf.brd()
-    output = stf.read_until(lambda line: line and 'Fen' in line)[-1]
+    output = stf.read_until(lambda line: 'Fen' in line)[-1]
     return output[5:]  # - "Fen: "
 
 
