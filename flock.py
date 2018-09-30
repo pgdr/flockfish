@@ -3,40 +3,42 @@ from __future__ import print_function
 import subprocess
 from flask import Flask, jsonify, request
 
-PATH_TO_STOCKFISH = 'stockfish'
 
-def _get_stockfish():
-    cmd = [PATH_TO_STOCKFISH]
-    p = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,
-                         stdin=subprocess.PIPE)
-    return p
+class Stockfish(object):
+    PATH_TO_STOCKFISH = 'stockfish'
 
-def _write(stf, cmd):
-    stf.stdin.write(cmd)
-    stf.stdin.write('\n')
+    def __init__(self):
+        self._cmd = [Stockfish.PATH_TO_STOCKFISH]
+        self._stf = subprocess.Popen(self._cmd,
+                                    stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE)
+        self.stdout = self._stf.stdout
 
-def _go(stf):
-    _write(stf, 'go')
+    def _write(self, cmd):
+        self._stf.stdin.write(cmd)
+        self._stf.stdin.write('\n')
 
-def _brd(stf):
-    _write(stf, 'd')
+    def go(self):
+        self._write('go')
 
-def _pos(stf, fen=None, moves=None):
-    wstr = 'position'
-    if fen is None:
-        fen = 'startpos'
-    else:
-        fen = 'fen {}'.format(fen)
-    if moves is not None:
-        moves = 'moves {}'.format(moves)
-    _write(stf, 'position {} {}'.format(fen, moves).strip())
+    def brd(self):
+        self._write('d')
+
+    def pos(self, fen=None, moves=None):
+        wstr = 'position'
+        if fen is None:
+            fen = 'startpos'
+        else:
+            fen = 'fen {}'.format(fen)
+        if moves is not None:
+            moves = 'moves {}'.format(moves)
+        self._write('position {} {}'.format(fen, moves).strip())
 
 
 def get_board(fen=None, moves=None):
-    stf = _get_stockfish()
-    _pos(stf, fen=fen, moves=moves)
-    _brd(stf)
+    stf = Stockfish()
+    stf.pos(fen=fen, moves=moves)
+    stf.brd()
 
     brd = []
     for line in iter(stf.stdout.readline, b''):
@@ -48,9 +50,9 @@ def get_board(fen=None, moves=None):
             return brd
 
 def get_bestmove(fen=None, moves=None):
-    stf = _get_stockfish()
-    _pos(stf, fen=fen, moves=moves)
-    _go(stf)
+    stf = Stockfish()
+    stf.pos(fen=fen, moves=moves)
+    stf.go()
 
     for line in iter(stf.stdout.readline, b''):
         line = line.rstrip()
@@ -59,9 +61,9 @@ def get_bestmove(fen=None, moves=None):
             return line.split()[1]
 
 def get_fen(fen=None, moves=None):
-    stf = _get_stockfish()
-    _pos(stf, fen=fen, moves=moves)
-    _brd(stf)
+    stf = Stockfish()
+    stf.pos(fen=fen, moves=moves)
+    stf.brd()
     for line in iter(stf.stdout.readline, b''):
         line = line.strip()
         print(">>> " + line)
@@ -91,4 +93,9 @@ def route_board():
 
 
 if __name__ == '__main__':
+    import sys
+    if len(sys.argv) > 2:
+        exit('Usage: python flock.py [stockfish]')
+    if len(sys.argv) == 2:
+        Stockfish.PATH_TO_STOCKFISH = sys.argv[1]
     app.run(host='0.0.0.0', port=6464)

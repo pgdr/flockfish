@@ -4,6 +4,9 @@ A [Flask](https://github.com/pallets/flask) server that boots up
 [Stockfish](https://github.com/official-stockfish/Stockfish) and returns best
 moves.
 
+For this project, you need to download and install `stockfish` and either have
+it in `$PATH` or give the path to `stockfish` as an argument.
+
 Three endpoints:
 * `bestmove`
 * `fen`
