@@ -43,6 +43,9 @@ class Stockfish(object):
             moves = 'moves {}'.format(moves)
         self._write('position {} {}'.format(fen, moves).strip())
 
+    def kill(self):
+        self._stf.kill()
+
 
 def get_board(fen=None, moves=None):
     stf = Stockfish()
@@ -50,6 +53,7 @@ def get_board(fen=None, moves=None):
     stf.brd()
 
     output = stf.read_until(lambda line: 'Checkers' in line)
+    stf.kill()
     brd = []
     for line in output:
         line = line.strip()
@@ -63,6 +67,7 @@ def get_bestmove(fen=None, moves=None):
     stf.go()
 
     output = stf.read_until(lambda line: 'bestmove' in line)[-1]
+    stf.kill()
     return output.split()[1]
 
 def get_fen(fen=None, moves=None):
@@ -70,6 +75,7 @@ def get_fen(fen=None, moves=None):
     stf.pos(fen=fen, moves=moves)
     stf.brd()
     output = stf.read_until(lambda line: 'Fen' in line)[-1]
+    stf.kill()
     return output[5:]  # - "Fen: "
 
 
